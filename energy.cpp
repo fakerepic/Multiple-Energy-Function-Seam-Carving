@@ -15,7 +15,8 @@ int Energy::RobertsX[3][3] = {{0, 0, 0}, {0, 1, 0}, {0, 0, -1}};
 int Energy::RobertsY[3][3] = {{0, 0, 0}, {0, 0, 1}, {0, -1, 0}};
 int Energy::Laplacian[3][3] = {{0, 1, 0}, {1, -4, 1}, {0, 1, 0}};
 
-void Energy::conv_mix(const QImage& image, QImage& output, const int (*kernelX)[3], const int (*kernelY)[3]) {
+void Energy::conv_mix(const QImage& image, QImage& output, const int (*kernelX)[3], const int (*kernelY)[3])
+{
   const int col = image.width();
   const int row = image.height();
 
@@ -24,7 +25,6 @@ void Energy::conv_mix(const QImage& image, QImage& output, const int (*kernelX)[
 
   int max_grad = 0;
   int min_grad = std::numeric_limits<int>::max();
-
 
   for (int x = 0; x < col; ++x) {
     for (int y = 0; y < row; ++y) {
@@ -44,6 +44,7 @@ void Energy::conv_mix(const QImage& image, QImage& output, const int (*kernelX)[
       min_grad = qMin(min_grad, energy[x][y]);
     }
   }
+
   // normalize to 0 - 255
   int range = max_grad - min_grad;
   if (range == 0) range = 1;
@@ -55,7 +56,8 @@ void Energy::conv_mix(const QImage& image, QImage& output, const int (*kernelX)[
   }
 }
 
-void Energy::convolution(const QImage& image, QImage& output, const int (*kernel)[3]) {
+void Energy::convolution(const QImage& image, QImage& output, const int (*kernel)[3])
+{
   int col = image.width();
   int row = image.height();
 
@@ -83,6 +85,7 @@ void Energy::convolution(const QImage& image, QImage& output, const int (*kernel
       energy[x][y] = gx;
     }
   }
+
   // normalize to 0 - 255
   int range = max_grad - min_grad;
   if (range == 0) range = 1;
@@ -94,9 +97,9 @@ void Energy::convolution(const QImage& image, QImage& output, const int (*kernel
   }
 }
 
-
 // reference: https://andrewdcampbell.github.io/seam-carving
-void Energy::forward(const QImage& image, QImage& output) {
+void Energy::forward(const QImage& image, QImage& output)
+{
   int row = image.height();
   int col = image.width();
   int max_energy = 0;
@@ -105,7 +108,7 @@ void Energy::forward(const QImage& image, QImage& output) {
   /* output = image.convertToFormat(QImage::Format_Grayscale8); */
 
   std::vector<std::vector<int>> energy(col, std::vector<int>(row, 0));
-  std::vector<std::vector<int>> m(col, std::vector<int>(row, 0));
+
   for (int y = 0; y < row; y++) {
     for (int x = 0; x < col; x++) {
       int up = qBound(0, y - 1, row - 1);
@@ -113,25 +116,20 @@ void Energy::forward(const QImage& image, QImage& output) {
       int left = qBound(0, x - 1, col - 1);
       int right = qBound(0, x + 1, col - 1);
 
-      int mU = m[x][up];
-      int mL = m[left][y];
-      int mR = m[right][y];
-
       int cU = qAbs(qGray(image.pixel(left, y)) - qGray(image.pixel(right, y)));
       int cL = qAbs(qGray(image.pixel(x, up)) - qGray(image.pixel(left, y))) + cU;
       int cR = qAbs(qGray(image.pixel(x, up)) - qGray(image.pixel(right, y))) + cU;
 
       array<int, 3> cULR = {cU, cL, cR};
-      array<int, 3> mULR = {mU + cU, mL + cL, mR + cR};
 
       int argmin = min_element(cULR.begin(), cULR.end()) - cULR.begin();
-      m[x][y] = mULR[argmin];
       energy[x][y] = cULR[argmin];
 
       min_energy = qMin(min_energy, energy[x][y]);
       max_energy = qMax(max_energy, energy[x][y]);
     }
   }
+
   // normalize to 0 - 255
   int range = max_energy - min_energy;
   if (range == 0) range = 1;

@@ -4,11 +4,18 @@
 #include <iostream>
 #include "energy.h"
 using eg = Energy;
-using namespace std::chrono;
 
-SeamCarving::SeamCarving(SeamCarving::MODE method) : method(method) {}
+// constructor:
 
-void transpose(QImage& img) {
+SeamCarving::SeamCarving(SeamCarving::MODE method)
+{
+  setMode(method);
+}
+
+// algorithm related:
+
+void transpose(QImage& img)
+{
   QImage temp = QImage(img.height(), img.width(), QImage::Format_RGB32);
   for (int i = 0; i < img.width(); ++i)
     for (int j = 0; j < img.height(); ++j)
@@ -16,34 +23,38 @@ void transpose(QImage& img) {
   img = temp;
 }
 
-void SeamCarving::run() {
-  calcEnergymap();
-  getMinEnergySeam();
-  removeSeam(seam);
+void SeamCarving::run()
+{
+  calcEnergy();
+  calculateSeam();
+  removeSeam();
 }
 
-void SeamCarving::run_horizontal() {
+void SeamCarving::run_horizontal()
+{
   transpose(m_result);
-  calcEnergymap();
-  getMinEnergySeam();
-  removeSeam(seam);
+  calcEnergy();
+  calculateSeam();
+  removeSeam();
   transpose(m_result);
   transpose(m_energy);
 }
 
-void SeamCarving::calcEnergymap() {
+void SeamCarving::calcEnergy()
+{
   switch (method) {
-  case Sobel: eg::conv_mix(m_result, m_energy, eg::SobelX, eg::SobelY); break;
-  case Scharr: eg::conv_mix(m_result, m_energy, eg::ScharrX, eg::ScharrY); break;
-  case Prewitt: eg::conv_mix(m_result, m_energy, eg::PrewittX, eg::PrewittY); break;
-  case Roberts: eg::conv_mix(m_result, m_energy, eg::RobertsX, eg::RobertsY); break;
-  case Laplacian: eg::convolution(m_result, m_energy, eg::Laplacian); break;
-  case Forward: eg::forward(m_result, m_energy); break;
+  case SOBEL:     eg::conv_mix(m_result, m_energy, eg::SobelX, eg::SobelY); break;
+  case SCHARR:    eg::conv_mix(m_result, m_energy, eg::ScharrX, eg::ScharrY); break;
+  case PREWITT:   eg::conv_mix(m_result, m_energy, eg::PrewittX, eg::PrewittY); break;
+  case ROBERTS:   eg::conv_mix(m_result, m_energy, eg::RobertsX, eg::RobertsY); break;
+  case LAPLACIAN: eg::convolution(m_result, m_energy, eg::Laplacian); break;
+  case FORWARD:   eg::forward(m_result, m_energy); break;
   default: break;
   }
 }
 
-void SeamCarving::getMinEnergySeam() {
+void SeamCarving::calculateSeam()
+{
   const int rows = m_result.height();
   const int cols = m_result.width();
 
@@ -85,7 +96,8 @@ void SeamCarving::getMinEnergySeam() {
     seam[i] = dp_from[seam[i + 1]][i + 1];
 }
 
-void SeamCarving::removeSeam(const std::vector<int>& seam) {
+void SeamCarving::removeSeam()
+{
   QImage temp = QImage(m_result.width() - 1, m_result.height(), QImage::Format_RGB32);
   for (int i = 0; i < m_result.height(); ++i) {
     for (int j = 0; j < seam[i]; ++j) {
@@ -98,15 +110,43 @@ void SeamCarving::removeSeam(const std::vector<int>& seam) {
   m_result = temp;
 }
 
-void SeamCarving::readImage(const QString& fileName) {
+// utility functions:
+
+void SeamCarving::readImage(const QString& fileName)
+{
   m_image = QImage(fileName);
   m_result = QImage(m_image);
-  calcEnergymap();
+  calcEnergy();
 }
 
-void SeamCarving::saveImage(const QString& fileName) { m_result.save(fileName); }
+void SeamCarving::saveImage(const QString& fileName)
+{
+  m_result.save(fileName);
+}
 
-void SeamCarving::reset() {
+void SeamCarving::reset()
+{
   m_result = QImage(m_image);
-  calcEnergymap();
+  calcEnergy();
+}
+
+const QImage& SeamCarving::energy()
+{
+  if (m_energy.isNull()) calcEnergy();
+  return m_energy;
+}
+
+const QImage& SeamCarving::image()
+{
+  return m_image;
+}
+
+const QImage& SeamCarving::result()
+{
+  return m_result;
+}
+
+void SeamCarving::setMode(MODE mode)
+{
+  method = mode;
 }

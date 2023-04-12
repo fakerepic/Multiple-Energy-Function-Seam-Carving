@@ -2,7 +2,8 @@
 #include <iostream>
 #include "seam_carving.h"
 
-gui::gui(QWidget* parent) : QMainWindow(parent) {
+gui::gui(QWidget* parent) : QMainWindow(parent)
+{
   this->setMinimumSize(500, 400);
   this->setMaximumSize(500, 400);
   imageLabel = new QLabel(this);
@@ -29,9 +30,9 @@ gui::gui(QWidget* parent) : QMainWindow(parent) {
   directionBox->setGeometry(300, 30, 100, 30);
   seamButton->setGeometry(400, 30, 100, 30);
 
-  seamNumBox->setValue(50);
+  seamNumBox->setValue(1);
   seamNumBox->setMinimum(1);
-  seamNumBox->setMaximum(200);
+  seamNumBox->setMaximum(1000);
   energyButton->setChecked(false);
   methodBox->addItem("Forward");
   methodBox->addItem("Sobel");
@@ -55,16 +56,18 @@ gui::gui(QWidget* parent) : QMainWindow(parent) {
 
 // private slots : --------------------------------------------
 
-void gui::on_open_triggered() {
+void gui::on_open_triggered()
+{
   QString fileName =
       QFileDialog::getOpenFileName(this, tr("Open Image"), "", tr("Image Files (*.png *.jpg *.bmp, *jpeg)"));
   if (fileName.isEmpty()) return;
   seamCarver.readImage(fileName);
-  imageType = Result;
+  imageType = RESULT;
   showImage(seamCarver.image());
 }
 
-void gui::on_save_triggered() {
+void gui::on_save_triggered()
+{
   if (this->NullImageWarning()) return;
 
   QString fileName =
@@ -73,18 +76,21 @@ void gui::on_save_triggered() {
   seamCarver.saveImage(fileName);
 }
 
-void gui::on_seam_triggered() {
+void gui::on_seam_triggered()
+{
   if (this->NullImageWarning()) return;
 
   seamButton->setEnabled(false);
   halfButton->setEnabled(false);
 
-  if (imageType == Original) imageType = Result;
+  if (imageType == ORIGINAL) imageType = RESULT;
 
-  for (int i = 0; i < seamNumBox->value(); ++i) {
-    seamButton->setText(QString::number(i + 1) + "/" + QString::number(seamNumBox->value()));
-    (seamDirec == Horizontal) ? seamCarver.run_horizontal() : seamCarver.run();
-    (imageType == Energy) ? showImage(seamCarver.energy()) : showImage(seamCarver.result());
+  int round = seamDirec == VERTICAL ? seamCarver.result().width() : seamCarver.result().height();
+  round = round > seamNumBox->value() ? seamNumBox->value() : round;
+  for (int i = 0; i < round; ++i) {
+    seamButton->setText(QString::number(i + 1) + "/" + QString::number(round));
+    (seamDirec == HORIZONTAL) ? seamCarver.run_horizontal() : seamCarver.run();
+    (imageType == ENERGY) ? showImage(seamCarver.energy()) : showImage(seamCarver.result());
   }
 
   seamButton->setText("Seam");
@@ -92,44 +98,48 @@ void gui::on_seam_triggered() {
   halfButton->setEnabled(true);
 }
 
-void gui::on_energy_toggle() {
+void gui::on_energy_toggle()
+{
   if (this->NullImageWarning()) return;
 
-  imageType = imageType == Energy ? Result : Energy;
-  (imageType == Energy) ? showImage(seamCarver.energy()) : showImage(seamCarver.result());
+  imageType = imageType == ENERGY ? RESULT : ENERGY;
+  (imageType == ENERGY) ? showImage(seamCarver.energy()) : showImage(seamCarver.result());
 }
 
-void gui::on_original_toggle() {
+void gui::on_original_toggle()
+{
   if (this->NullImageWarning()) return;
 
-  imageType = imageType == Original ? Result : Original;
-  (imageType == Original) ? showImage(seamCarver.image()) : showImage(seamCarver.result());
+  imageType = imageType == ORIGINAL ? RESULT : ORIGINAL;
+  (imageType == ORIGINAL) ? showImage(seamCarver.image()) : showImage(seamCarver.result());
 }
 
-void gui::on_reset_triggered() {
+void gui::on_reset_triggered()
+{
   seamCarver.reset();
   showImage(seamCarver.result());
 }
 
-void gui::on_halfSize_triggered() {
+void gui::on_halfSize_triggered()
+{
   if (this->NullImageWarning()) return;
 
   seamButton->setEnabled(false);
   halfButton->setEnabled(false);
 
-  imageType = Result;
+  imageType = RESULT;
 
   int w = seamCarver.result().width() / 2;
   int h = seamCarver.result().height() / 2;
   for (int i = 0; i < w; ++i) {
     seamButton->setText(QString::number(i + 1) + "/" + QString::number(w + h));
     seamCarver.run();
-    (imageType == Energy) ? showImage(seamCarver.energy()) : showImage(seamCarver.result());
+    (imageType == ENERGY) ? showImage(seamCarver.energy()) : showImage(seamCarver.result());
   }
   for (int i = 0; i < h; ++i) {
     seamButton->setText(QString::number(i + 1 + w) + "/" + QString::number(w + h));
     seamCarver.run_horizontal();
-    (imageType == Energy) ? showImage(seamCarver.energy()) : showImage(seamCarver.result());
+    (imageType == ENERGY) ? showImage(seamCarver.energy()) : showImage(seamCarver.result());
   }
 
   seamButton->setText("Seam");
@@ -137,17 +147,19 @@ void gui::on_halfSize_triggered() {
   halfButton->setEnabled(true);
 }
 
-void gui::on_method_selected(int index) {
+void gui::on_method_selected(int index)
+{
   seamCarver.setMode((SeamCarving::MODE)index);
-  seamCarver.calcEnergymap();
-  if (imageType == Energy) showImage(seamCarver.energy());
+  seamCarver.calcEnergy();
+  if (imageType == ENERGY) showImage(seamCarver.energy());
 }
 
 void gui::on_direction_selected(int index) { seamDirec = (Direction)index; }
 
 // private : --------------------------------------------
 
-void gui::showImage(const QImage& image) {
+void gui::showImage(const QImage& image)
+{
   this->setMinimumSize(qMax(image.width(), 500), image.height() + topOffset());
   this->setMaximumSize(qMax(image.width(), 500), image.height() + topOffset());
 
@@ -163,7 +175,8 @@ void gui::showImage(const QImage& image) {
   loop.exec();
 }
 
-bool gui::NullImageWarning() {
+bool gui::NullImageWarning()
+{
   if (seamCarver.image().isNull()) {
     QMessageBox::warning(this, "Warning", "Please open an image first!");
     return true;

@@ -4,27 +4,27 @@
 
 class SeamCarving {
 public:
-  enum MODE { Forward, Sobel, Scharr, Prewitt, Roberts, Laplacian,  } method;
-  SeamCarving(MODE method = Forward);
+  enum MODE { FORWARD, SOBEL, SCHARR, PREWITT, ROBERTS, LAPLACIAN } method;
+  SeamCarving(MODE = FORWARD);
 
-  void readImage(const QString& fileName);
-  void saveImage(const QString& fileName);
-  void reset();
   void run();
   void run_horizontal();
-  void calcEnergymap();
-  void setMode(MODE mode) { method = mode; }
 
-  const QImage& image() { return m_image; }
-  const QImage& result() { return m_result; }
-  const QImage& energy() {
-    if (m_energy.isNull()) calcEnergymap();
-    return m_energy;
-  }
+  void readImage(const QString&);
+  void saveImage(const QString&);
+  void reset();
+  void setMode(MODE);
+
+  const QImage& image();
+  const QImage& result();
+  const QImage& energy();
+
+public:
+  void calcEnergy();
 
 private:
-  void getMinEnergySeam();
-  void removeSeam(const std::vector<int>& seam);
+  void calculateSeam();
+  void removeSeam();
 
 private:
   QImage m_image;   // original image
@@ -34,6 +34,4 @@ private:
   std::vector<int>              seam;     // min energy seam
   std::vector<std::vector<int>> dp_sum;   // dp array of energy sum
   std::vector<std::vector<int>> dp_from;  // dp array of min energy path
-  
-  std::vector <std::vector<int>> v_energy;
 };

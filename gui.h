@@ -19,8 +19,8 @@ public:
 
 private:
   int topOffset() const { return 60; }
-  enum Direction { Vertical, Horizontal } seamDirec = Vertical;
-  enum ImageType { Result, Original, Energy } imageType = Result;
+  enum Direction { VERTICAL, HORIZONTAL } seamDirec = VERTICAL;
+  enum ImageType { RESULT, ORIGINAL, ENERGY } imageType = RESULT;
   // algorithm and data
   SeamCarving seamCarver;
 
@@ -38,6 +38,7 @@ private:
   QComboBox*   directionBox;
 
 private slots:
+  // slots
   void on_open_triggered();
   void on_save_triggered();
   void on_seam_triggered();
